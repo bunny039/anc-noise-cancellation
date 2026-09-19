@@ -1,0 +1,28 @@
+# ClearCom Pi deployment configuration
+# Matches the exact ClearCom architecture:
+#   Bluetooth mic -> 16kHz s16le -> resample 48kHz -> ONNX -> resample 16kHz -> UDP 20ms packets
+
+streaming:
+  chunk_seconds: 0.25         # 0.25s = 4000 samples at 16kHz per enhance call
+                              # Internally resampled to 12000 samples at 48kHz for ONNX
+                              # Lower = less latency, higher = better quality
+                              # 0.25s gives ~0.4-0.7s end-to-end on Pi 4
+  queue_maxsize: 3            # bounded queue depth -- prevents the 30-second backlog
+                              # if enhance is slower than capture, oldest chunk is
+                              # DROPPED rather than accumulating
+
+echo_gate:
+  enabled: true               # soft-mute mic when speaker is playing received audio
+  mute_gain: 0.05             # gain applied to mic during playback (0.0 = full mute)
+  holdoff_packets: 10         # keep muting for N packets (10 x 20ms = 200ms) after
+                              # playback queue empties, to catch speaker tail
+
+# PulseAudio Bluetooth devices
+# Run `pactl list short sources` and `pactl list short sinks` to find yours
+# Leave empty/null to use the system default
+pulseaudio:
+  source: null                # Bluetooth mic source, e.g. "bluez_source.24_01_08_16_00_B0"
+  sink: null                  # Bluetooth speaker sink, e.g. "bluez_output.24_01_08_16_00_B0.1"
+
+model:
+  onnx_dir: "models"          # relative to this file -- holds enc.onnx/erb_dec.onnx/df_dec.onnx
