@@ -1,0 +1,42 @@
+# Raw and processed datasets — large, not owned by us, not worth versioning
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+dataset/
+
+# Large source zips at repo root — regenerable from Drive, would exceed
+# GitHub's file size limits anyway (multi-GB)
+*.zip
+
+# Trained weights and exported models — large binaries, regenerate via training scripts
+checkpoints/*
+!checkpoints/.gitkeep
+
+# Standard Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Executables and installers
+*.exe
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Vendored third-party code, fetched via README commands instead of committed -
+# DTLN (superseded) and the original pretrained DeepFilterNet3 checkpoint (small,
+# but re-downloadable from the official repo, see README). The FINE-TUNED
+# checkpoint is explicitly un-ignored below since it is not re-downloadable -
+# it only exists because of real training done on this project.
+external/DTLN/
+external/DeepFilterNet3/
+external/DeepFilterNet/
+!external/DeepFilterNet3_finetuned/
+!external/DeepFilterNet3_finetuned/**
+

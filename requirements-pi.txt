@@ -1,0 +1,19 @@
+# Minimal deps to run the ONNX-only inference path (--onnx flag) on the
+# Raspberry Pi. Deliberately excludes torch, torchaudio, and DeepFilterNet
+# (the Rust-backed libdf) - that's the whole point of the ONNX wrapper.
+#
+# pesq and pystoi are ONLY needed if you run live_demo.py with a --clean
+# reference file to compute SNR/STOI/PESQ metrics on the Pi itself. If
+# you're just running the live mic demo (--mic --onnx, no --clean), you
+# can drop those two lines - they compile C extensions and are the
+# slowest/most likely to give install trouble on aarch64.
+
+numpy
+onnxruntime
+soundfile
+scipy
+pyyaml
+sounddevice
+matplotlib
+pesq
+pystoi

@@ -1,0 +1,84 @@
+# Single source of truth for all pipeline hyperparameters.
+# Nothing in src/ should hardcode these values — always import and read from here.
+# Rationale: frame size, hop, sample rate, and SNR levels get referenced in
+# preprocessing, training, AND evaluation. If these drift out of sync across
+# files, your metrics silently become meaningless (e.g. evaluating at a
+# different frame size than you trained on).
+
+audio:
+  sample_rate: 16000
+  frame_size_ms: 32
+  hop_size_ms: 8
+  frame_size_samples: 512
+  hop_size_samples: 128
+  channels: 1
+
+model:
+  name: deepfilternet3
+  base_dir: external/DeepFilterNet3_finetuned
+  sample_rate: 48000            # DeepFilterNet3's native rate - pipeline.py resamples 16kHz <-> 48kHz around it
+  # legacy DTLN fields - Phase 1 baseline model, no longer active. Kept for reference,
+  # not read by pipeline.py anymore. Delete once you're sure nothing else still imports these.
+  dtln_lstm_units: 128
+  dtln_num_lstm_layers: 2
+  dtln_pretrained_weights_path: checkpoints/dtln_pretrained.h5
+  quantized_export_path: null   # FLAG: was TFLite int8 - invalid now, DeepFilterNet3 is PyTorch not TF/Keras.
+                                 # Real export target TBD (likely ONNX) - decide only when you reach Pi hardware.
+
+training:
+  phase1_baseline:
+    dataset: voicebank_demand
+    snr_levels_db: [0, 5, 10, 15]   # NOTE: not used by train_baseline.py - VoiceBank-DEMAND ships pre-mixed
+    learning_rate: 0.001
+    epochs: 100
+    batch_size: 32
+    chunk_length_seconds: 1.0        # VERIFY: must be shorter than your shortest VoiceBank clip - see flag below
+    validation_speaker_ids: ["p286", "p287"]
+  phase2_finetune:
+    dataset: mad_noise
+    snr_levels_db: [-5, 0, 5, 10, 15]
+    learning_rate: 0.0001
+    epochs: 30
+    batch_size: 8
+    patience: 7
+    gradient_accumulation_steps: 4
+    seed: 42
+
+nlms:
+  filter_length: 32
+  step_size: 0.001      # was 0.1 - see COMMIT NOTE
+  epsilon: 1e-8
+
+evaluation:
+  targets:
+    snr_improvement_db: 15
+    stoi: 0.85
+    pesq: 2.5                # corrected from PS typo (">25" is impossible; PESQ caps at 4.5)
+    latency_ms: 30
+
+paths:
+  raw_data_dir: data/raw
+  processed_data_dir: data/processed
+  checkpoints_dir: checkpoints
+
+datasets:
+  voicebank_demand:
+    clean_train_dir: data/raw/clean_trainset_28spk_wav
+    noisy_train_dir: data/raw/noisy_trainset_28spk_wav
+    clean_test_dir: data/raw/clean_testset_wav
+    noisy_test_dir: data/raw/noisy_testset_wav
+  synthetic:
+    defence_noise_dir: data/raw/defence_noise_train
+    output_dir: data/processed/synthetic
+    snr_levels_db: [-5, 0, 5, 10, 15]
+    max_files: null
+  synthetic_test:
+    defence_noise_dir: data/raw/defence_noise_test
+    output_dir: data/processed/synthetic_defence_test
+    snr_levels_db: [-5, 0, 5, 10, 15]
+    max_files: null
+  mad:
+    training_csv: dataset/MAD_dataset/training.csv
+    test_csv: dataset/MAD_dataset/test.csv
+    num_labels: 7
+    source_grouping: true

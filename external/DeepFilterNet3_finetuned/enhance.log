@@ -1,0 +1,200 @@
+2026-09-01 10:38:07 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 10:38:07 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 10:38:08 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 10:38:08 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 10:38:08 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 10:38:08 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 10:38:08 | INFO     | DF | Running on device cpu
+2026-09-01 10:38:08 | INFO     | DF | Model loaded
+2026-09-01 14:06:25 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:06:25 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:06:25 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:06:25 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:06:25 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:06:25 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:06:26 | INFO     | DF | Running on device cpu
+2026-09-01 14:06:26 | INFO     | DF | Model loaded
+2026-09-01 14:15:13 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:15:13 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:15:13 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:15:13 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:15:13 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:15:13 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:15:13 | INFO     | DF | Running on device cpu
+2026-09-01 14:15:13 | INFO     | DF | Model loaded
+2026-09-01 14:16:28 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:16:28 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:16:30 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:16:30 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:16:30 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:16:30 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:16:30 | INFO     | DF | Running on device cpu
+2026-09-01 14:16:30 | INFO     | DF | Model loaded
+2026-09-01 14:17:45 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:17:45 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:17:45 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:17:45 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:17:45 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:17:45 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:17:45 | INFO     | DF | Running on device cpu
+2026-09-01 14:17:45 | INFO     | DF | Model loaded
+2026-09-01 14:20:58 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:20:58 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:20:58 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:20:58 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:20:58 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:20:58 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:20:58 | INFO     | DF | Running on device cpu
+2026-09-01 14:20:58 | INFO     | DF | Model loaded
+2026-09-01 14:21:56 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:21:56 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:21:56 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:21:56 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:21:56 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:21:56 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:21:56 | INFO     | DF | Running on device cpu
+2026-09-01 14:21:56 | INFO     | DF | Model loaded
+2026-09-01 14:29:53 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:29:53 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:29:53 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:29:53 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:29:53 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:29:53 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:29:53 | INFO     | DF | Running on device cpu
+2026-09-01 14:29:53 | INFO     | DF | Model loaded
+2026-09-01 14:32:41 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:32:41 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:32:42 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:32:42 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:32:42 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:32:42 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:32:42 | INFO     | DF | Running on device cpu
+2026-09-01 14:32:42 | INFO     | DF | Model loaded
+2026-09-01 14:37:13 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:37:13 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:37:13 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:37:13 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:37:13 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:37:13 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:37:13 | INFO     | DF | Running on device cpu
+2026-09-01 14:37:13 | INFO     | DF | Model loaded
+2026-09-01 14:40:32 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:40:32 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:40:32 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:40:32 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:40:32 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:40:32 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:40:32 | INFO     | DF | Running on device cpu
+2026-09-01 14:40:32 | INFO     | DF | Model loaded
+2026-09-01 14:49:59 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 14:49:59 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 14:50:00 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 14:50:00 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 14:50:00 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 14:50:00 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 14:50:00 | INFO     | DF | Running on device cpu
+2026-09-01 14:50:00 | INFO     | DF | Model loaded
+2026-09-01 15:09:12 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 15:09:12 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 15:09:12 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 15:09:12 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 15:09:12 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 15:09:12 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 15:09:12 | INFO     | DF | Running on device cpu
+2026-09-01 15:09:12 | INFO     | DF | Model loaded
+2026-09-01 15:14:22 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 15:14:22 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 15:14:22 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 15:14:22 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 15:14:22 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 15:14:22 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 15:14:22 | INFO     | DF | Running on device cpu
+2026-09-01 15:14:22 | INFO     | DF | Model loaded
+2026-09-01 15:16:49 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 15:16:49 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 15:16:50 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 15:16:50 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 15:16:50 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 15:16:50 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 15:16:50 | INFO     | DF | Running on device cpu
+2026-09-01 15:16:50 | INFO     | DF | Model loaded
+2026-09-01 15:19:41 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 15:19:41 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 15:19:41 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 15:19:41 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 15:19:41 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 15:19:41 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 15:19:41 | INFO     | DF | Running on device cpu
+2026-09-01 15:19:41 | INFO     | DF | Model loaded
+2026-09-01 15:21:01 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-01 15:21:01 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-01 15:21:01 | INFO     | DF | Git commit: 01d6a29, branch: main
+2026-09-01 15:21:01 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-01 15:21:01 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-01 15:21:01 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-01 15:21:01 | INFO     | DF | Running on device cpu
+2026-09-01 15:21:01 | INFO     | DF | Model loaded
+2026-09-03 21:57:06 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-03 21:57:06 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-03 21:57:06 | INFO     | DF | Git commit: 0cad9c3, branch: main
+2026-09-03 21:57:06 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-03 21:57:06 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-03 21:57:07 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-03 21:57:07 | INFO     | DF | Running on device cpu
+2026-09-03 21:57:07 | INFO     | DF | Model loaded
+2026-09-03 22:03:01 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-03 22:03:01 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-03 22:03:01 | INFO     | DF | Git commit: 0cad9c3, branch: main
+2026-09-03 22:03:01 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-03 22:03:01 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-03 22:03:01 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-03 22:03:01 | INFO     | DF | Running on device cpu
+2026-09-03 22:03:01 | INFO     | DF | Model loaded
+2026-09-03 22:05:13 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-03 22:05:13 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-03 22:05:14 | INFO     | DF | Git commit: 0cad9c3, branch: main
+2026-09-03 22:05:14 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-03 22:05:14 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-03 22:05:14 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-03 22:05:14 | INFO     | DF | Running on device cpu
+2026-09-03 22:05:14 | INFO     | DF | Model loaded
+2026-09-03 22:11:33 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-03 22:11:33 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-03 22:11:33 | INFO     | DF | Git commit: 0cad9c3, branch: main
+2026-09-03 22:11:33 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-03 22:11:33 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-03 22:11:33 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-03 22:11:33 | INFO     | DF | Running on device cpu
+2026-09-03 22:11:33 | INFO     | DF | Model loaded
+2026-09-03 22:12:55 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-03 22:12:55 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-03 22:12:55 | INFO     | DF | Git commit: 0cad9c3, branch: main
+2026-09-03 22:12:55 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-03 22:12:55 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-03 22:12:55 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-03 22:12:55 | INFO     | DF | Running on device cpu
+2026-09-03 22:12:55 | INFO     | DF | Model loaded
+2026-09-03 22:41:20 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-03 22:41:20 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-03 22:41:21 | INFO     | DF | Git commit: 0cad9c3, branch: main
+2026-09-03 22:41:21 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-03 22:41:21 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-03 22:41:21 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-03 22:41:21 | INFO     | DF | Running on device cpu
+2026-09-03 22:41:21 | INFO     | DF | Model loaded
+2026-09-07 10:33:40 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-07 10:33:40 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-07 10:33:40 | INFO     | DF | Git commit: 06e4482, branch: main
+2026-09-07 10:33:40 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-07 10:33:41 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-07 10:33:41 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-07 10:33:41 | INFO     | DF | Running on device cpu
+2026-09-07 10:33:41 | INFO     | DF | Model loaded
+2026-09-07 10:39:47 | INFO     | DF | Running on torch 2.6.0+cpu
+2026-09-07 10:39:47 | INFO     | DF | Running on host DESKTOP-4P4GQ46
+2026-09-07 10:39:47 | INFO     | DF | Git commit: 06e4482, branch: main
+2026-09-07 10:39:47 | INFO     | DF | Loading model settings of DeepFilterNet3_finetuned
+2026-09-07 10:39:47 | INFO     | DF | Initializing model `deepfilternet3`
+2026-09-07 10:39:47 | INFO     | DF | Found checkpoint external/DeepFilterNet3_finetuned\checkpoints\model_132.ckpt.best with epoch 132
+2026-09-07 10:39:47 | INFO     | DF | Running on device cpu
+2026-09-07 10:39:47 | INFO     | DF | Model loaded

@@ -1,0 +1,27 @@
+# Core ML
+tensorflow>=2.15,<2.17          # DTLN reference implementation uses TF/Keras
+numpy>=1.24
+pyyaml>=6.0                     # for reading configs/config.yaml
+
+# Audio I/O and processing
+librosa>=0.10                   # resampling, framing utilities
+soundfile>=0.12                 # read/write wav files
+sounddevice>=0.4                # live mic input for the laptop demo
+
+# Evaluation metrics
+pystoi>=0.3                     # STOI
+pesq>=0.0.4                     # PESQ (note: has a C extension, may need build tools)
+
+# NLMS / classical DSP
+scipy>=1.11                     # used for signal processing utilities alongside NLMS
+
+# Visualization (before/after spectrograms, waveforms)
+matplotlib>=3.7
+
+# Dev / testing
+pytest>=7.4
+wavinfo>=2.0                    # required by external/DTLN/DTLN_model.py
+
+
+deepfilternet>=0.5
+torchaudio>=2.0
