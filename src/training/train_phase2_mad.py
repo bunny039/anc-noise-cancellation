@@ -57,7 +57,7 @@ def train_phase2():
         train_dataset, 
         batch_size=batch_size, 
         sampler=train_sampler,
-        num_workers=4,
+        num_workers=0,
         drop_last=True
     )
     
@@ -65,7 +65,7 @@ def train_phase2():
         val_dataset,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=2
+        num_workers=0
     )
 
     # 4. Setup Optimizer, Scheduler, and Loss

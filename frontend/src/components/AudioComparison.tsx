@@ -1,9 +1,8 @@
 /* ============================================================
-   components/AudioComparison.tsx
-   Synchronized A/B audio comparison panel
+   components/AudioComparison.tsx — Futuristic Defence A/B Comparison HUD
    ============================================================ */
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, ArrowLeftRight } from 'lucide-react';
+import { Play, Pause, Volume2, SkipBack, ArrowLeftRight } from 'lucide-react';
 
 interface AudioComparisonProps {
   noisyUrl: string | null;
@@ -13,225 +12,172 @@ interface AudioComparisonProps {
 
 type ActiveChannel = 'noisy' | 'enhanced';
 
-function AudioPlayer({
-  url, label, color, isAB, abActive,
-}: {
+interface PlayerProps {
   url: string | null;
   label: string;
-  color: string;
-  isAB?: boolean;
-  abActive?: boolean;
-}) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  accentColor: string;
+  variant: 'noisy' | 'enhanced';
+}
+
+const Player: React.FC<PlayerProps> = ({ url, label, accentColor, variant }) => {
+  const ref = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [currentTime, setCT] = useState(0);
+  const [dur, setDur] = useState(0);
 
-  useEffect(() => {
-    setPlaying(false);
-    setProgress(0);
-    setCT(0);
-  }, [url]);
+  useEffect(() => { setPlaying(false); setProgress(0); setCT(0); }, [url]);
 
   const toggle = () => {
-    if (!audioRef.current || !url) return;
-    if (playing) { audioRef.current.pause(); setPlaying(false); }
-    else { audioRef.current.play(); setPlaying(true); }
+    if (!ref.current || !url) return;
+    if (playing) { ref.current.pause(); setPlaying(false); }
+    else { ref.current.play(); setPlaying(true); }
   };
 
-  const formatT = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(0).padStart(2, '0')}`;
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current || !url) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    ref.current.currentTime = ((e.clientX - rect.left) / rect.width) * (ref.current.duration || 0);
+  };
+
+  const restart = () => { if (ref.current) { ref.current.currentTime = 0; } };
+
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(0).padStart(2, '0')}`;
 
   return (
-    <div className={`px-2.5 py-2 border rounded-sm transition-all ${
-      isAB && abActive
-        ? `border-${color}-400 bg-${color}-50`
-        : 'border-panel-border bg-white'
-    }`}>
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-1.5">
-          <div className={`w-2 h-2 rounded-full ${url ? 'bg-' + color + '-500' : 'bg-slate-300'}`} />
-          <span className="text-2xs font-semibold font-mono text-slate-700">{label}</span>
-          {isAB && abActive && (
-            <span className={`text-2xs font-mono px-1 py-0.5 rounded-sm bg-${color}-100 text-${color}-700`}>
-              PLAYING
-            </span>
-          )}
+    <div className="flex-1 p-3.5 rounded-xl transition-all duration-200 bg-slate-950/80 border border-slate-800">
+      {/* Label */}
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ background: accentColor, boxShadow: `0 0 6px ${accentColor}` }} />
+          <span className={`text-xs font-bold font-mono tracking-wider ${variant === 'noisy' ? 'text-amber-300' : 'text-cyan-300'}`}>
+            {label}
+          </span>
         </div>
-        <span className="text-2xs font-mono text-slate-400">
-          {formatT(currentTime)} / {formatT(duration)}
-        </span>
+        <span className="text-[10px] font-mono text-slate-400">{fmt(currentTime)} / {fmt(dur)}</span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          onClick={toggle}
-          disabled={!url}
-          className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors
-            ${url
-              ? 'bg-defence-600 text-white hover:bg-defence-700'
-              : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
-        >
-          {playing ? <Pause size={10} /> : <Play size={10} />}
+      {/* Seek bar */}
+      <div className="h-1.5 rounded-full mb-3 overflow-hidden cursor-pointer bg-slate-900"
+        onClick={seek}>
+        <div className="h-full rounded-full transition-all duration-100"
+          style={{ width: `${progress * 100}%`, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}99)` }} />
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center gap-2 font-mono">
+        <button onClick={restart} disabled={!url}
+          className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors disabled:opacity-30">
+          <SkipBack size={11} />
         </button>
-
-        {/* Seek bar */}
-        <div
-          className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden cursor-pointer"
-          onClick={e => {
-            if (!audioRef.current || !url) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const frac = (e.clientX - rect.left) / rect.width;
-            audioRef.current.currentTime = frac * (audioRef.current.duration || 0);
-          }}
-        >
-          <div
-            className={`h-full rounded-full transition-all bg-${color}-500`}
-            style={{ width: `${progress * 100}%` }}
-          />
-        </div>
-
-        <Volume2 size={11} className="text-slate-400" />
+        <button onClick={toggle} disabled={!url}
+          className="w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 transition-all"
+          style={{
+            background: url ? `${accentColor}25` : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${url ? accentColor + '60' : 'rgba(255,255,255,0.1)'}`,
+          }}>
+          {playing
+            ? <Pause size={12} style={{ color: accentColor }} />
+            : <Play size={12} style={{ color: url ? accentColor : '#475569' }} />
+          }
+        </button>
+        <div className="flex-1" />
+        <Volume2 size={12} className="text-slate-400 flex-shrink-0" />
       </div>
 
-      <audio
-        ref={audioRef}
-        src={url ?? undefined}
-        onTimeUpdate={e => {
-          const el = e.currentTarget;
-          setCT(el.currentTime);
-          setProgress(el.duration ? el.currentTime / el.duration : 0);
-        }}
-        onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-        onEnded={() => setPlaying(false)}
-      />
+      <audio ref={ref} src={url ?? undefined}
+        onTimeUpdate={e => { const el = e.currentTarget; setCT(el.currentTime); setProgress(el.duration ? el.currentTime / el.duration : 0); }}
+        onLoadedMetadata={e => setDur(e.currentTarget.duration)}
+        onEnded={() => setPlaying(false)} />
     </div>
   );
-}
+};
 
 export const AudioComparison: React.FC<AudioComparisonProps> = ({
   noisyUrl, enhancedUrl, jobId: _jobId,
 }) => {
   const [abMode, setAbMode] = useState(false);
   const [abChannel, setAbChannel] = useState<ActiveChannel>('noisy');
+  const [abPlaying, setAbPlaying] = useState(false);
   const noisyRef = useRef<HTMLAudioElement>(null);
   const enhancedRef = useRef<HTMLAudioElement>(null);
-  const [abPlaying, setAbPlaying] = useState(false);
 
-  // A/B keyboard shortcut
   useEffect(() => {
     if (!abMode) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        setAbChannel(c => c === 'noisy' ? 'enhanced' : 'noisy');
-      }
+      if (e.code === 'Space') { e.preventDefault(); setAbChannel(c => c === 'noisy' ? 'enhanced' : 'noisy'); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [abMode]);
 
-  // A/B playback management
   useEffect(() => {
     if (!abMode || !abPlaying) return;
     const noisy = noisyRef.current;
     const enhanced = enhancedRef.current;
     if (!noisy || !enhanced) return;
-
-    if (abChannel === 'noisy') {
-      const t = enhanced.currentTime;
-      enhanced.pause();
-      noisy.currentTime = t;
-      noisy.play();
-    } else {
-      const t = noisy.currentTime;
-      noisy.pause();
-      enhanced.currentTime = t;
-      enhanced.play();
-    }
+    if (abChannel === 'noisy') { enhanced.pause(); noisy.currentTime = enhanced.currentTime; noisy.play(); }
+    else { noisy.pause(); enhanced.currentTime = noisy.currentTime; enhanced.play(); }
   }, [abChannel, abMode, abPlaying]);
 
   const toggleABPlay = () => {
     if (!noisyUrl || !enhancedUrl) return;
-    if (abPlaying) {
-      noisyRef.current?.pause();
-      enhancedRef.current?.pause();
-      setAbPlaying(false);
-    } else {
-      setAbPlaying(true);
-      (abChannel === 'noisy' ? noisyRef : enhancedRef).current?.play();
-    }
+    if (abPlaying) { noisyRef.current?.pause(); enhancedRef.current?.pause(); setAbPlaying(false); }
+    else { setAbPlaying(true); (abChannel === 'noisy' ? noisyRef : enhancedRef).current?.play(); }
   };
 
   return (
-    <div className="panel flex flex-col">
-      <div className="panel-header">
-        <span className="panel-title flex items-center gap-1.5">
-          <ArrowLeftRight size={10} />
-          Before / After Comparison
-        </span>
+    <div className="hud-panel overflow-hidden border border-cyan-500/20 bg-[#070e1c]/95">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950/70">
+        <div className="flex items-center gap-2">
+          <ArrowLeftRight size={14} className="text-cyan-400" />
+          <span className="text-xs font-bold text-white tracking-wide font-mono uppercase">A / B Channel Auditioning</span>
+        </div>
         <button
           onClick={() => { setAbMode(m => !m); setAbPlaying(false); }}
-          className={`text-2xs font-semibold px-2 py-0.5 rounded-sm border font-mono transition-colors
-            ${abMode
-              ? 'bg-defence-700 text-white border-defence-800'
-              : 'bg-white text-slate-600 border-panel-border hover:bg-slate-50'}`}
+          className={`px-3 py-1 rounded-lg text-[11px] font-bold font-mono transition-all
+            ${abMode ? 'text-cyan-300 bg-cyan-950 border border-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.3)]' : 'text-slate-400 hover:text-white bg-slate-900 border border-slate-800'}`}
         >
-          A/B MODE {abMode ? 'ON' : 'OFF'}
+          A/B Mode {abMode ? '● ACTIVE' : '○'}
         </button>
       </div>
 
-      <div className="px-2.5 py-2 space-y-2">
+      <div className="p-4 font-mono">
         {abMode ? (
-          <>
-            <div className="flex items-center justify-between px-2 py-1.5 bg-slate-900 rounded-sm">
-              <div className="text-2xs text-white font-mono">
-                Now playing: <span className={abChannel === 'noisy' ? 'text-blue-400' : 'text-emerald-400'}>
-                  {abChannel === 'noisy' ? '▶ NOISY INPUT' : '▶ ENHANCED OUTPUT'}
-                </span>
+          <div className="space-y-3">
+            {/* A/B control bar */}
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+              <div className="flex gap-1.5 flex-1">
+                {(['noisy', 'enhanced'] as ActiveChannel[]).map(ch => (
+                  <button key={ch} onClick={() => setAbChannel(ch)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-mono transition-all
+                      ${abChannel === ch
+                        ? ch === 'noisy'
+                          ? 'text-amber-300 bg-amber-950/80 border border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                          : 'text-cyan-300 bg-cyan-950/80 border border-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.3)]'
+                        : 'text-slate-400 bg-slate-900 border border-slate-800 hover:text-white'}`}
+                  >
+                    {ch === 'noisy' ? '[A] Noisy Channel' : '[B] Enhanced Channel'}
+                  </button>
+                ))}
               </div>
-              <div className="text-2xs text-slate-400 font-mono">Space = switch</div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setAbChannel('noisy'); }}
-                className={`flex-1 py-1.5 text-2xs font-semibold font-mono rounded-sm border transition-colors
-                  ${abChannel === 'noisy'
-                    ? 'bg-blue-600 text-white border-blue-700'
-                    : 'bg-white text-slate-600 border-panel-border hover:bg-slate-50'}`}
-              >
-                [ A ] NOISY
-              </button>
-              <button
-                onClick={() => { setAbChannel('enhanced'); }}
-                className={`flex-1 py-1.5 text-2xs font-semibold font-mono rounded-sm border transition-colors
-                  ${abChannel === 'enhanced'
-                    ? 'bg-emerald-600 text-white border-emerald-700'
-                    : 'bg-white text-slate-600 border-panel-border hover:bg-slate-50'}`}
-              >
-                [ B ] ENHANCED
+              <button onClick={toggleABPlay} disabled={!noisyUrl || !enhancedUrl}
+                className="btn-primary px-4 py-1.5 text-xs disabled:opacity-30">
+                {abPlaying ? <><Pause size={12} /> PAUSE</> : <><Play size={12} /> PLAY</>}
               </button>
             </div>
-
-            <button
-              onClick={toggleABPlay}
-              disabled={!noisyUrl || !enhancedUrl}
-              className={`w-full btn-primary ${!noisyUrl || !enhancedUrl ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              {abPlaying ? <Pause size={11} /> : <Play size={11} />}
-              {abPlaying ? 'PAUSE A/B' : 'PLAY A/B'}
-            </button>
-
-            {/* Hidden A/B audio elements */}
+            <p className="text-[10px] text-slate-400 font-mono text-center">
+              Press <kbd className="px-1.5 py-0.5 rounded text-[9px] bg-slate-900 border border-slate-700 text-cyan-300">Space</kbd>
+              {' '}to instantly swap channels in real time during playback
+            </p>
             <audio ref={noisyRef} src={noisyUrl ?? undefined} onEnded={() => setAbPlaying(false)} />
             <audio ref={enhancedRef} src={enhancedUrl ?? undefined} onEnded={() => setAbPlaying(false)} />
-          </>
+          </div>
         ) : (
-          <>
-            <AudioPlayer url={noisyUrl} label="NOISY INPUT" color="blue" />
-            <AudioPlayer url={enhancedUrl} label="ENHANCED OUTPUT" color="emerald" />
-          </>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Player url={noisyUrl} label="NOISY INPUT" accentColor="#f59e0b" variant="noisy" />
+            <Player url={enhancedUrl} label="ENHANCED OUTPUT" accentColor="#00f0ff" variant="enhanced" />
+          </div>
         )}
       </div>
     </div>

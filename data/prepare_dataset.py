@@ -70,8 +70,8 @@ def _mix_at_snr(clean, noise, snr_db):
         noise = np.tile(noise, int(np.ceil(len(clean) / len(noise))))
     noise = noise[:len(clean)]
 
-    clean_power = np.mean(clean ** 2)
-    noise_power = np.mean(noise ** 2)
+    clean_power = float(np.dot(clean, clean) / max(len(clean), 1))
+    noise_power = float(np.dot(noise, noise) / max(len(noise), 1))
     if noise_power == 0:
         raise ValueError("Noise clip is silent, cannot compute SNR mix")
 

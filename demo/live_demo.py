@@ -93,8 +93,8 @@ def compute_snr_db(clean, estimate):
     clean = clean[:min_len]
     estimate = estimate[:min_len]
     noise = clean - estimate
-    signal_power = np.sum(clean ** 2)
-    noise_power = np.sum(noise ** 2)
+    signal_power = np.dot(clean, clean)
+    noise_power = np.dot(noise, noise)
     if noise_power == 0:
         return float("inf")
     return 10 * np.log10(signal_power / noise_power)

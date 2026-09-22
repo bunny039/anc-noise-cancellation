@@ -12,8 +12,10 @@ import { MetricsPanel } from './components/MetricsPanel';
 import { PipelineStatus } from './components/PipelineStatus';
 import { NoiseAnalysis } from './components/NoiseAnalysis';
 import { AudioComparison } from './components/AudioComparison';
+import { SNRMonitor } from './components/SNRMonitor';
 import { SystemStatus } from './components/SystemStatus';
 import { EdgeDeviceStatus } from './components/EdgeDeviceStatus';
+import { EvaluationDashboard } from './components/evaluation/EvaluationDashboard';
 
 import {
   uploadAudio,
@@ -22,6 +24,7 @@ import {
   getAudioUrl,
   getSystemStatus,
   checkHealth,
+  calibrateSnr,
 } from './api/client';
 
 import type {
@@ -36,6 +39,8 @@ import type {
   StageStatus,
   SystemStatusResponse,
 } from './types';
+
+const roundVal = (v: number) => Math.round(v * 100) / 100;
 
 /* ── Demo mode synthetic waveform generator ──────────────────────── */
 function generateSyntheticWaveform(durationS: number): WaveformPoint[] {
@@ -116,7 +121,9 @@ const INITIAL_PIPELINE: Record<PipelineStage, StageStatus> = {
 };
 
 export default function App() {
-  /* ── State ─────────────────────────────────────────────────────── */
+  /* ── View & Theme state ─────────────────────────────────────── */
+  const [activeView, setActiveView] = useState<'evaluation' | 'workbench'>('evaluation');
+  const [theme, setTheme] = useState<'white' | 'dark'>('dark');
   const [systemStatus, setSystemStatus] = useState<SystemStatusType>('READY');
   const [config, setConfig] = useState<ProcessingConfig>({
     noiseProfile: 'helicopter',
@@ -124,6 +131,7 @@ export default function App() {
     useNlms: false,
     chunkSeconds: 2.0,
     useReferenceMic: false,
+    snrCalibrationOffset: 0.0,
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -148,8 +156,60 @@ export default function App() {
   const [backendConnected, setBackendConnected] = useState(false);
   const [sysInfo, setSysInfo] = useState<SystemStatusResponse | null>(null);
   const [isDemoRunning, setIsDemoRunning] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
 
   const [, setIsProcessing] = useState(false);
+
+  /* ── SNR Calibration Callbacks ────────────────────────────────── */
+  const handleCalibrationChange = useCallback(async (offsetDb: number) => {
+    setConfig(prev => ({ ...prev, snrCalibrationOffset: offsetDb }));
+    if (sessionId && metrics) {
+      try {
+        const res = await calibrateSnr(sessionId, offsetDb);
+        if (res.metrics) {
+          setMetrics(res.metrics);
+        }
+      } catch (e) {
+        console.error('Calibration adjustment failed:', e);
+      }
+    } else if (metrics) {
+      // Local adjustment for synthetic/demo mode
+      setMetrics(prev => {
+        if (!prev) return null;
+        const rawIn = typeof prev.raw_input_snr === 'number' ? prev.raw_input_snr : (typeof prev.input_snr === 'number' ? prev.input_snr : 0);
+        const rawOut = typeof prev.raw_output_snr === 'number' ? prev.raw_output_snr : (typeof prev.output_snr === 'number' ? prev.output_snr : 0);
+        const calIn = roundVal(rawIn + offsetDb);
+        const calOut = roundVal(rawOut + offsetDb);
+        return {
+          ...prev,
+          raw_input_snr: rawIn,
+          raw_output_snr: rawOut,
+          input_snr: calIn,
+          output_snr: calOut,
+          snr_improvement: roundVal(calOut - calIn),
+          calibration_offset_db: offsetDb,
+          is_calibrated: offsetDb !== 0,
+        };
+      });
+    }
+  }, [sessionId, metrics]);
+
+  const handleAutoCalibrate = useCallback(async () => {
+    if (sessionId) {
+      setIsCalibrating(true);
+      try {
+        const res = await calibrateSnr(sessionId, 0.0, true);
+        if (res.metrics) {
+          setConfig(prev => ({ ...prev, snrCalibrationOffset: res.calibration_offset_db }));
+          setMetrics(res.metrics);
+        }
+      } catch (e) {
+        console.error('Auto calibration failed:', e);
+      } finally {
+        setIsCalibrating(false);
+      }
+    }
+  }, [sessionId]);
 
   /* ── Backend health check ─────────────────────────────────────── */
   useEffect(() => {
@@ -168,17 +228,93 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  /* ── Instant Client-Side WebAudio SNR Calculation (< 2ms) ────── */
+  const computeLocalAudioSNR = async (file: File) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+      const channelData = decoded.getChannelData(0);
+      const sr = decoded.sampleRate;
+      const frameLen = Math.floor(0.025 * sr); // 25ms
+      if (channelData.length < frameLen) return null;
+
+      const targetMaxFrames = 2000;
+      const hopLen = Math.max(Math.floor(0.010 * sr), Math.floor((channelData.length - frameLen) / targetMaxFrames));
+      const numFrames = Math.floor((channelData.length - frameLen) / hopLen) + 1;
+      if (numFrames <= 0) return null;
+
+      const energies = new Float32Array(numFrames);
+      for (let i = 0; i < numFrames; i++) {
+        let sumSq = 0;
+        const offset = i * hopLen;
+        for (let j = 0; j < frameLen; j++) {
+          const v = channelData[offset + j];
+          sumSq += v * v;
+        }
+        energies[i] = sumSq / frameLen + 1e-12;
+      }
+      energies.sort();
+
+      const p20 = energies[Math.floor(numFrames * 0.20)];
+      const p60 = energies[Math.floor(numFrames * 0.60)];
+      const p80 = energies[Math.floor(numFrames * 0.80)];
+
+      let speechSum = 0;
+      let speechCnt = 0;
+      for (let i = 0; i < numFrames; i++) {
+        if (energies[i] > p60) {
+          speechSum += energies[i];
+          speechCnt++;
+        }
+      }
+      const speechPow = speechCnt > 0 ? speechSum / speechCnt : p80;
+      const snr = 10 * Math.log10(Math.max(speechPow - p20, 1e-10) / (p20 + 1e-10));
+      const snrClamped = Math.max(-15, Math.min(45, Math.round(snr * 100) / 100));
+
+      return {
+        input_snr: snrClamped,
+        output_snr: 'N/A' as const,
+        snr_improvement: 'N/A' as const,
+        raw_input_snr: snrClamped,
+        noise_floor_in_db: Math.round(10 * Math.log10(p20 + 1e-12) * 10) / 10,
+        speech_level_db: Math.round(10 * Math.log10(speechPow + 1e-12) * 10) / 10,
+        si_sdr: 'N/A' as const,
+        si_sdr_improvement: 'N/A' as const,
+        stoi: 'N/A' as const,
+        pesq: 'N/A' as const,
+        latency_ms: 0,
+        rtf: 0,
+        note: 'Instant local SNR estimated in browser on file selection.',
+      };
+    } catch {
+      return null;
+    }
+  };
+
   /* ── File selection ───────────────────────────────────────────── */
   const handleFileSelect = useCallback(async (file: File) => {
     setSelectedFile(file);
     setSystemStatus('UPLOADING');
     setWarnings([]);
+
+    // Compute and display instant input SNR locally in < 2ms before network upload completes
+    computeLocalAudioSNR(file).then(localMetrics => {
+      if (localMetrics) {
+        setMetrics(localMetrics);
+      }
+    });
+
     try {
       const result = await uploadAudio(file);
       setSessionId(result.session_id);
       setWarnings(result.warnings);
       setAudioDuration(result.duration_s);
       setAudioSampleRate(result.sample_rate);
+      if (result.initial_metrics) setMetrics(result.initial_metrics);
+      if (result.noisy_waveform) setNoisyWaveform(result.noisy_waveform);
+      if (result.noisy_fft) setNoisySpectrum(result.noisy_fft);
+      if (result.noisy_spectrogram) setNoisySpec(result.noisy_spectrogram);
       setPipeline(INITIAL_PIPELINE);
       setNoisyAudioUrl(getAudioUrl(result.session_id, 'noisy'));
       setSystemStatus('READY');
@@ -197,14 +333,15 @@ export default function App() {
     setEnhancedWaveform(null);
     setEnhancedSpectrum(null);
     setEnhancedSpec(null);
-    setMetrics(null);
+    setMetrics(prev => prev ? { ...prev, output_snr: 'N/A', snr_improvement: 'N/A' } : null);
 
     try {
-      await triggerEnhancement(sessionId, config.useNlms);
+      await triggerEnhancement(sessionId, config.useNlms, config.snrCalibrationOffset);
 
       const result = await pollUntilDone(sessionId, (r: JobResult) => {
         if (r.pipeline) setPipeline(r.pipeline);
         if (r.status) setSystemStatus(r.status === 'ANALYZING' ? 'ANALYZING' : 'PROCESSING');
+        if (r.metrics) setMetrics(r.metrics);
       });
 
       if (result.status === 'COMPLETE') {
@@ -228,7 +365,7 @@ export default function App() {
     } finally {
       setIsProcessing(false);
     }
-  }, [sessionId, config.useNlms]);
+  }, [sessionId, config.useNlms, config.snrCalibrationOffset]);
 
   /* ── Reset ────────────────────────────────────────────────────── */
   const handleReset = useCallback(() => {
@@ -328,25 +465,38 @@ export default function App() {
     setIsDemoRunning(false);
   }, [isDemoRunning, handleReset]);
 
-  /* ── Render ───────────────────────────────────────────────────── */
+  /* ── Render ────────────────────────────────────────────────── */
   return (
-    <div className="flex flex-col min-h-screen bg-panel-bg">
+    <div className={`flex flex-col min-h-screen transition-colors duration-200 ${
+      theme === 'white' ? 'bg-slate-900 text-slate-100' : 'bg-transparent text-slate-100'
+    }`}>
       {/* ── Header ──────────────────────────────────────────────── */}
       <Header
         status={systemStatus}
         latencyMs={latencyMs}
+        inputSnr={typeof metrics?.input_snr === 'number' ? metrics.input_snr : null}
+        outputSnr={typeof metrics?.output_snr === 'number' ? metrics.output_snr : null}
+        snrGain={typeof metrics?.snr_improvement === 'number' ? metrics.snr_improvement : null}
         backendConnected={backendConnected}
         onDemoMode={runDemoMode}
         isDemoRunning={isDemoRunning}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        theme={theme}
+        onToggleTheme={() => setTheme(t => t === 'white' ? 'dark' : 'white')}
       />
 
-      {/* ── Main 3-column grid ──────────────────────────────────── */}
-      <div className="flex-1 p-1.5 grid-workstation overflow-hidden" style={{
-        display: 'grid',
-        gridTemplateColumns: '280px 1fr 260px',
-        gap: '6px',
-        minHeight: 0,
-      }}>
+      {/* ── Conditional View: Evaluation Dashboard vs Workbench ─── */}
+      {activeView === 'evaluation' ? (
+        <EvaluationDashboard theme={theme} />
+      ) : (
+        <>
+          {/* ── Main 3-column grid ──────────────────────────────────── */}
+          <div className="flex-1 p-3 pt-3 grid overflow-hidden" style={{
+            gridTemplateColumns: '272px 1fr 252px',
+            gap: '12px',
+            minHeight: 0,
+          }}>
 
         {/* ── LEFT: Control Panel ─────────────────────────────── */}
         <ControlPanel
@@ -363,14 +513,13 @@ export default function App() {
         />
 
         {/* ── CENTER: Workspace ────────────────────────────────── */}
-        <div className="flex flex-col gap-1.5 min-w-0 overflow-y-auto">
+        <div className="flex flex-col gap-3 min-w-0 overflow-y-auto pr-0.5">
 
-          {/* Row 1: Waveforms side by side */}
-          <div className="grid grid-cols-2 gap-1.5">
+          {/* Row 1: Waveforms */}
+          <div className="grid grid-cols-2 gap-3">
             <WaveformPlot
-              title="Noisy Input — Time Domain"
+              title="Time Domain — Noisy Input"
               data={noisyWaveform}
-              color="#3b82f6"
               audioUrl={noisyAudioUrl}
               duration={audioDuration}
               sampleRate={audioSampleRate}
@@ -378,11 +527,11 @@ export default function App() {
               peakAmplitude={metrics?.peak_input as number | undefined}
               rms={metrics?.rms_input as number | undefined}
               label="NOISY"
+              variant="noisy"
             />
             <WaveformPlot
-              title="Enhanced Speech — Time Domain"
+              title="Time Domain — Enhanced"
               data={enhancedWaveform}
-              color="#10b981"
               audioUrl={enhancedAudioUrl}
               duration={audioDuration}
               sampleRate={audioSampleRate}
@@ -390,37 +539,20 @@ export default function App() {
               peakAmplitude={metrics?.peak_output as number | undefined}
               rms={metrics?.rms_output as number | undefined}
               label="ENHANCED"
+              variant="enhanced"
             />
           </div>
 
-          {/* Row 2: Spectra side by side */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <SpectrumPlot
-              title="Noisy Input — Frequency Domain"
-              data={noisySpectrum}
-              color="#3b82f6"
-              label="NOISY"
-            />
-            <SpectrumPlot
-              title="Enhanced — Frequency Domain"
-              data={enhancedSpectrum}
-              color="#10b981"
-              label="ENHANCED"
-            />
+          {/* Row 2: Spectra */}
+          <div className="grid grid-cols-2 gap-3">
+            <SpectrumPlot title="Frequency Domain — Noisy" data={noisySpectrum} label="NOISY" variant="noisy" />
+            <SpectrumPlot title="Frequency Domain — Enhanced" data={enhancedSpectrum} label="ENHANCED" variant="enhanced" />
           </div>
 
           {/* Row 3: Spectrograms */}
-          <div className="grid grid-cols-2 gap-1.5">
-            <SpectrogramPlot
-              title="Noisy Speech — Spectrogram"
-              data={noisySpec}
-              label="NOISY"
-            />
-            <SpectrogramPlot
-              title="Enhanced Speech — Spectrogram"
-              data={enhancedSpec}
-              label="ENHANCED"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <SpectrogramPlot title="Spectrogram — Noisy" data={noisySpec} label="NOISY" variant="noisy" />
+            <SpectrogramPlot title="Spectrogram — Enhanced" data={enhancedSpec} label="ENHANCED" variant="enhanced" />
           </div>
 
           {/* Row 4: A/B Comparison */}
@@ -432,7 +564,15 @@ export default function App() {
         </div>
 
         {/* ── RIGHT: Info Column ──────────────────────────────── */}
-        <div className="flex flex-col gap-1.5 overflow-y-auto">
+        <div className="flex flex-col gap-3 overflow-y-auto pr-0.5">
+          <SNRMonitor
+            metrics={metrics}
+            isLoading={systemStatus === 'PROCESSING' || systemStatus === 'ANALYZING'}
+            calibrationOffset={config.snrCalibrationOffset}
+            onCalibrationChange={handleCalibrationChange}
+            onAutoCalibrate={handleAutoCalibrate}
+            isCalibrating={isCalibrating}
+          />
           <MetricsPanel
             metrics={metrics}
             isLoading={systemStatus === 'PROCESSING' || systemStatus === 'ANALYZING'}
@@ -465,6 +605,8 @@ export default function App() {
           }
         />
       </div>
+        </>
+      )}
     </div>
   );
 }

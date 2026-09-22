@@ -1,13 +1,9 @@
 /* ============================================================
-   components/SpectrumPlot.tsx
-   Frequency-domain FFT magnitude spectrum using Recharts
+   components/SpectrumPlot.tsx — Futuristic Defence FFT Spectrum HUD
    ============================================================ */
 import React, { useMemo, useState } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine,
-} from 'recharts';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ZoomIn, ZoomOut, BarChart2 } from 'lucide-react';
 import type { SpectrumPoint } from '../types';
 
 interface SpectrumPlotProps {
@@ -16,142 +12,110 @@ interface SpectrumPlotProps {
   color?: string;
   isLoading?: boolean;
   label?: string;
+  variant?: 'noisy' | 'enhanced';
 }
 
-const EMPTY_DATA: SpectrumPoint[] = Array.from({ length: 100 }, (_, i) => ({
-  f: i * 80,
-  db: -80 + Math.random() * 2 - 1,
-}));
+const EMPTY: SpectrumPoint[] = Array.from({ length: 80 }, (_, i) => ({ f: i * 100, db: -70 + Math.sin(i * 0.3) * 5 }));
 
 export const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
-  title, data, color = '#3b82f6', isLoading, label,
+  title, data, isLoading, label, variant = 'noisy',
 }) => {
-  const dbRange: [number, number] = [-80, 0];
   const [maxFreq, setMaxFreq] = useState(8000);
 
+  const isNoisy = variant === 'noisy';
+  const accentColor = isNoisy ? '#f59e0b' : '#00f0ff';
+
   const plotData = useMemo(() => {
-    if (!data || data.length === 0) return EMPTY_DATA;
+    if (!data || data.length === 0) return EMPTY;
     return data.filter(p => p.f <= maxFreq);
   }, [data, maxFreq]);
 
   const hasData = !!data && data.length > 0;
 
-  // Find peak frequency
   const peakPoint = useMemo(() => {
     if (!data) return null;
     return data.reduce((best, p) => (!best || p.db > best.db) ? p : best, null as SpectrumPoint | null);
   }, [data]);
 
   return (
-    <div className="panel flex flex-col">
-      <div className="panel-header">
-        <span className="panel-title">{title}</span>
+    <div className="hud-panel flex flex-col overflow-hidden border border-cyan-500/20 bg-[#070e1c]/95">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800 bg-slate-950/70">
         <div className="flex items-center gap-2">
-          {label && (
-            <span className={`text-2xs font-semibold px-1.5 py-0.5 rounded-sm font-mono border
-              ${label === 'NOISY' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-              {label}
-            </span>
-          )}
-          <div className="flex items-center gap-1">
-            <button
-              className="text-slate-400 hover:text-slate-600"
-              onClick={() => setMaxFreq(v => Math.max(1000, v - 1000))}
-              title="Zoom in (reduce freq range)"
-            >
+          <BarChart2 size={13} style={{ color: accentColor }} />
+          <span className="text-xs font-bold text-white tracking-wide font-mono uppercase">{title}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {label && <span className={isNoisy ? 'tag tag-noisy' : 'tag tag-enhanced'}>{label}</span>}
+          <div className="flex gap-1 font-mono">
+            <button className="w-6 h-6 flex items-center justify-center rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors"
+              onClick={() => setMaxFreq(v => Math.max(1000, v - 1000))}>
               <ZoomIn size={11} />
             </button>
-            <button
-              className="text-slate-400 hover:text-slate-600"
-              onClick={() => setMaxFreq(v => Math.min(24000, v + 1000))}
-              title="Zoom out (extend freq range)"
-            >
+            <button className="w-6 h-6 flex items-center justify-center rounded-md bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors"
+              onClick={() => setMaxFreq(v => Math.min(24000, v + 1000))}>
               <ZoomOut size={11} />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="px-2 pt-2 pb-1">
+      <div className="px-3 py-2.5">
         {isLoading && (
-          <div className="flex items-center justify-center h-20 bg-slate-50 border border-panel-border rounded-sm">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <div className="w-3 h-3 border-2 border-defence-500 border-t-transparent rounded-full animate-spin" />
-              Computing spectrum…
-            </div>
+          <div className="h-[76px] rounded-lg overflow-hidden relative bg-slate-950/80 border border-slate-800">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-signal-flow" />
           </div>
         )}
-
         {!isLoading && (
-          <div className={`relative ${!hasData ? 'opacity-30' : ''}`}>
-            <ResponsiveContainer width="100%" height={80}>
-              <LineChart data={plotData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" />
+          <div className={`relative transition-opacity duration-300 ${!hasData ? 'opacity-30' : ''}`}>
+            <ResponsiveContainer width="100%" height={76}>
+              <LineChart data={plotData} margin={{ top: 4, right: 2, bottom: 0, left: -24 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="rgba(56, 189, 248, 0.07)" />
                 <XAxis
                   dataKey="f"
                   tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
-                  tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fill: '#9ca3af' }}
-                  axisLine={false}
-                  tickLine={false}
-                  label={{ value: 'Hz', position: 'insideRight', fontSize: 8, fill: '#9ca3af' }}
+                  tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fill: '#64748b' }}
+                  axisLine={false} tickLine={false}
                 />
                 <YAxis
-                  domain={dbRange}
+                  domain={[-80, 0]}
                   tickFormatter={(v: number) => `${v}`}
-                  tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fill: '#9ca3af' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={28}
-                  label={{ value: 'dB', angle: -90, position: 'insideLeft', fontSize: 8, fill: '#9ca3af' }}
+                  tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fill: '#64748b' }}
+                  axisLine={false} tickLine={false} width={24}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     const d = payload[0].payload as SpectrumPoint;
                     return (
-                      <div className="bg-slate-900 text-white text-2xs px-2 py-1 rounded font-mono">
-                        <div>{d.f >= 1000 ? `${(d.f / 1000).toFixed(2)} kHz` : `${d.f.toFixed(0)} Hz`}</div>
-                        <div>{d.db.toFixed(1)} dBFS</div>
+                      <div className="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-mono shadow-xl">
+                        <div className="text-slate-400">{d.f >= 1000 ? `${(d.f / 1000).toFixed(2)} kHz` : `${d.f.toFixed(0)} Hz`}</div>
+                        <div style={{ color: accentColor }} className="font-bold">{d.db.toFixed(1)} dBFS</div>
                       </div>
                     );
                   }}
                 />
-                {/* Peak frequency marker */}
                 {peakPoint && (
-                  <ReferenceLine
-                    x={peakPoint.f}
-                    stroke="#f59e0b"
-                    strokeDasharray="3 2"
-                    strokeWidth={1}
-                    label={{ value: `Peak: ${peakPoint.f >= 1000 ? `${(peakPoint.f / 1000).toFixed(1)}k` : peakPoint.f.toFixed(0)}Hz`, fontSize: 7, fill: '#d97706', position: 'top' }}
-                  />
+                  <ReferenceLine x={peakPoint.f} stroke="#f59e0b66" strokeDasharray="3 2" strokeWidth={1} />
                 )}
-                <Line
-                  type="monotone"
-                  dataKey="db"
-                  stroke={color}
-                  strokeWidth={1}
-                  dot={false}
-                  isAnimationActive={false}
-                />
+                <Line type="monotone" dataKey="db" stroke={accentColor} strokeWidth={1.8}
+                  dot={false} isAnimationActive={hasData} animationDuration={600} />
               </LineChart>
             </ResponsiveContainer>
             {!hasData && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xs text-slate-400 font-mono">No spectrum data</span>
+                <span className="text-[11px] text-slate-400 font-mono">No spectrum data</span>
               </div>
             )}
           </div>
         )}
 
-        {/* Axis labels */}
         {hasData && peakPoint && (
-          <div className="mt-1 flex items-center gap-3">
-            <span className="text-2xs text-amber-600 font-mono">
-              ⬆ Peak: {peakPoint.f >= 1000 ? `${(peakPoint.f / 1000).toFixed(2)} kHz` : `${peakPoint.f.toFixed(0)} Hz`}
+          <div className="mt-2 flex items-center justify-between font-mono text-[10px]">
+            <span className="text-amber-400 font-bold">
+              ↑ Dominant Resonance: {peakPoint.f >= 1000 ? `${(peakPoint.f / 1000).toFixed(2)} kHz` : `${peakPoint.f.toFixed(0)} Hz`}
               {' '}({peakPoint.db.toFixed(1)} dBFS)
             </span>
-            <span className="text-2xs text-slate-400 font-mono">Range: 0–{(maxFreq / 1000).toFixed(0)} kHz</span>
+            <span className="text-slate-400">Bandwidth: 0 – {(maxFreq / 1000).toFixed(0)} kHz</span>
           </div>
         )}
       </div>

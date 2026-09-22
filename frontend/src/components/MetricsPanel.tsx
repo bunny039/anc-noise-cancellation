@@ -1,9 +1,8 @@
 /* ============================================================
-   components/MetricsPanel.tsx
-   Enhancement performance metrics panel
+   components/MetricsPanel.tsx — Futuristic Defence Metrics Panel
    ============================================================ */
 import React from 'react';
-import { BarChart2, Info } from 'lucide-react';
+import { TrendingUp, Info } from 'lucide-react';
 import type { Metrics } from '../types';
 
 interface MetricsPanelProps {
@@ -11,7 +10,7 @@ interface MetricsPanelProps {
   isLoading?: boolean;
 }
 
-type MetricSource = 'MEASURED' | 'CALCULATED' | 'MODEL OUTPUT' | 'CONFIG' | 'N/A';
+type MetricSource = 'MEASURED' | 'CALCULATED' | 'MODEL OUTPUT' | 'N/A';
 
 interface MetricDef {
   key: keyof Metrics;
@@ -20,147 +19,99 @@ interface MetricDef {
   tooltip: string;
   source: MetricSource;
   good?: (v: number) => boolean;
+  showPlus?: boolean;
 }
 
-const SOURCE_COLORS: Record<MetricSource, string> = {
-  'MEASURED':     'text-blue-600 bg-blue-50 border-blue-200',
-  'CALCULATED':   'text-purple-600 bg-purple-50 border-purple-200',
-  'MODEL OUTPUT': 'text-emerald-600 bg-emerald-50 border-emerald-200',
-  'CONFIG':       'text-slate-600 bg-slate-50 border-slate-200',
-  'N/A':          'text-slate-400 bg-slate-50 border-slate-200',
+const SOURCE_STYLE: Record<MetricSource, string> = {
+  'MEASURED':     'text-cyan-300 bg-cyan-950/80 border-cyan-500/40',
+  'CALCULATED':   'text-indigo-300 bg-indigo-950/80 border-indigo-500/40',
+  'MODEL OUTPUT': 'text-emerald-300 bg-emerald-950/80 border-emerald-500/40',
+  'N/A':          'text-slate-400 bg-slate-900 border-slate-800',
 };
 
 const METRICS: MetricDef[] = [
-  {
-    key: 'input_snr', label: 'Input SNR', unit: 'dB',
-    tooltip: 'Signal-to-Noise Ratio of the input audio. Requires a clean reference.',
-    source: 'CALCULATED',
-  },
-  {
-    key: 'output_snr', label: 'Output SNR', unit: 'dB',
-    tooltip: 'Signal-to-Noise Ratio of the enhanced output. Requires a clean reference.',
-    source: 'CALCULATED',
-    good: v => v >= 15,
-  },
-  {
-    key: 'snr_improvement', label: 'SNR Improvement', unit: 'dB',
-    tooltip: 'Improvement in SNR from input to output. Target: ≥ +15 dB (DRDO PS-26052).',
-    source: 'CALCULATED',
-    good: v => v >= 8,
-  },
-  {
-    key: 'si_sdr', label: 'SI-SDR', unit: 'dB',
-    tooltip: 'Scale-Invariant Signal-to-Distortion Ratio. Higher is better.',
-    source: 'CALCULATED',
-    good: v => v >= 12,
-  },
-  {
-    key: 'si_sdr_improvement', label: 'SI-SDR Impr.', unit: 'dB',
-    tooltip: 'Improvement in SI-SDR from input to output.',
-    source: 'CALCULATED',
-    good: v => v >= 5,
-  },
-  {
-    key: 'stoi', label: 'STOI', unit: '',
-    tooltip: 'Short-Time Objective Intelligibility (0–1). Target: ≥ 0.85.',
-    source: 'CALCULATED',
-    good: v => v >= 0.85,
-  },
-  {
-    key: 'pesq', label: 'PESQ', unit: '',
-    tooltip: 'Perceptual Evaluation of Speech Quality (1–4.5). Target: ≥ 2.5.',
-    source: 'CALCULATED',
-    good: v => v >= 2.5,
-  },
-  {
-    key: 'latency_ms', label: 'Processing Latency', unit: 'ms',
-    tooltip: 'Total wall-clock time for ONNX inference. Target: ≤ 30 ms/frame.',
-    source: 'MEASURED',
-    good: v => v <= 30,
-  },
-  {
-    key: 'rtf', label: 'Real-Time Factor', unit: '',
-    tooltip: 'Processing time / audio duration. RTF < 1 = faster than real-time.',
-    source: 'CALCULATED',
-    good: v => v < 1,
-  },
+  { key: 'input_snr',             label: 'Input SNR',        unit: 'dB',  tooltip: 'Signal-to-Noise Ratio of input signal.', source: 'CALCULATED' },
+  { key: 'output_snr',            label: 'Output SNR',       unit: 'dB',  tooltip: 'SNR after DeepFilterNet3 enhancement.', source: 'CALCULATED', good: v => v >= 15 },
+  { key: 'snr_improvement',       label: 'SNR Gain',         unit: 'dB',  tooltip: 'Δ SNR input→output. DRDO benchmark metric.', source: 'CALCULATED', good: v => v >= 8, showPlus: true },
+  { key: 'calibration_offset_db', label: 'SNR Calibration',  unit: 'dB',  tooltip: 'Transducer / noise floor calibration offset.', source: 'MEASURED', showPlus: true },
+  { key: 'si_sdr',                label: 'SI-SDR',           unit: 'dB',  tooltip: 'Scale-Invariant Signal-to-Distortion Ratio.', source: 'CALCULATED', good: v => v >= 12 },
+  { key: 'si_sdr_improvement',    label: 'SI-SDR Impr.',     unit: 'dB',  tooltip: 'Improvement in SI-SDR.', source: 'CALCULATED', good: v => v >= 5, showPlus: true },
+  { key: 'stoi',                  label: 'STOI',             unit: '',    tooltip: 'Short-Time Objective Intelligibility (0–1). Target ≥ 0.85.', source: 'CALCULATED', good: v => v >= 0.85 },
+  { key: 'pesq',                  label: 'PESQ',             unit: '',    tooltip: 'Perceptual Speech Quality (1–4.5). Target ≥ 2.50 MOS.', source: 'CALCULATED', good: v => v >= 2.5 },
+  { key: 'latency_ms',            label: 'Latency',          unit: 'ms',  tooltip: 'Total frame inference runtime. Target ≤ 30 ms.', source: 'MEASURED', good: v => v <= 30 },
+  { key: 'rtf',                   label: 'Real-Time Factor', unit: 'x',   tooltip: 'Processing / audio duration. RTF < 1 = real-time.', source: 'CALCULATED', good: v => v < 1 },
 ];
 
-const EXTRA_METRICS: MetricDef[] = [
-  { key: 'rms_input',  label: 'RMS (Input)',  unit: '', tooltip: 'Root-mean-square amplitude of input',  source: 'MEASURED' },
-  { key: 'rms_output', label: 'RMS (Output)', unit: '', tooltip: 'Root-mean-square amplitude of output', source: 'MEASURED' },
-  { key: 'peak_input', label: 'Peak (Input)', unit: '', tooltip: 'Peak amplitude of input',  source: 'MEASURED' },
-  { key: 'peak_output', label: 'Peak (Output)', unit: '', tooltip: 'Peak amplitude of output', source: 'MEASURED' },
-];
-
-function formatValue(val: number | string | undefined, unit?: string): { text: string; isNA: boolean } {
-  if (val === undefined || val === null) return { text: '—', isNA: true };
-  if (val === 'N/A') return { text: 'N/A', isNA: true };
-  const num = typeof val === 'number' ? val : parseFloat(val as string);
-  if (isNaN(num)) return { text: 'N/A', isNA: true };
-  const prefix = num > 0 && (unit === 'dB') ? '+' : '';
-  return { text: `${prefix}${num.toFixed(unit === 'ms' ? 1 : num < 1 && num > -1 ? 3 : 2)}${unit ? ` ${unit}` : ''}`, isNA: false };
+function fmtVal(val: number | string | undefined, unit?: string, showPlus?: boolean): { text: string; isNA: boolean } {
+  if (val === undefined || val === null || val === 'N/A') return { text: '—', isNA: true };
+  const n = typeof val === 'number' ? val : parseFloat(val as string);
+  if (isNaN(n)) return { text: 'N/A', isNA: true };
+  const prefix = showPlus && n > 0 ? '+' : '';
+  const dec = unit === 'ms' ? 1 : unit === 'x' ? 3 : n < 1 && n > -1 ? 3 : 2;
+  return { text: `${prefix}${n.toFixed(dec)}${unit ? ' ' + unit : ''}`, isNA: false };
 }
 
 export const MetricsPanel: React.FC<MetricsPanelProps> = ({ metrics, isLoading }) => {
   return (
-    <div className="panel flex flex-col">
-      <div className="panel-header">
-        <span className="panel-title flex items-center gap-1.5">
-          <BarChart2 size={10} />
-          Enhancement Performance
+    <div className="hud-panel flex flex-col overflow-hidden border border-cyan-500/20 bg-[#070e1c]/95">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950/70">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={14} className="text-cyan-400" />
+          <span className="text-xs font-bold text-white tracking-wide uppercase font-mono">Performance Metrics</span>
+        </div>
+        <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/30">
+          Telemetry
         </span>
       </div>
 
-      <div className="px-2.5 py-2 space-y-0.5">
-        {isLoading && (
-          <div className="flex items-center justify-center py-6">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <div className="w-3 h-3 border-2 border-defence-500 border-t-transparent rounded-full animate-spin" />
-              Computing metrics…
+      <div className="px-4 py-3 space-y-0 font-mono">
+        {!metrics && isLoading && (
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <div className="w-6 h-6 border-2 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin" />
+            <span className="text-[11px] text-cyan-300 font-mono">Computing metrics…</span>
+          </div>
+        )}
+
+        {!metrics && !isLoading && (
+          <div className="py-6 text-center">
+            <div className="w-10 h-10 mx-auto mb-3 rounded-xl flex items-center justify-center bg-slate-900 border border-slate-800">
+              <TrendingUp size={18} className="text-slate-400" />
             </div>
+            <p className="text-[11px] text-slate-400 font-mono">Metrics update on enhancement</p>
           </div>
         )}
 
-        {!isLoading && !metrics && (
-          <div className="py-4 text-center text-2xs text-slate-400 font-mono">
-            Metrics appear after processing
-          </div>
-        )}
-
-        {!isLoading && metrics && (
+        {metrics && (
           <>
-            {/* Note about clean reference */}
             {metrics.note && (
-              <div className="flex items-start gap-1.5 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded-sm mb-2">
-                <Info size={9} className="text-amber-600 mt-0.5 shrink-0" />
-                <span className="text-2xs text-amber-700">{metrics.note}</span>
+              <div className="notice-info mb-3">
+                <Info size={11} className="flex-shrink-0 mt-0.5 text-cyan-400" />
+                <span>{metrics.note}</span>
               </div>
             )}
 
             {METRICS.map(def => {
               const raw = metrics[def.key];
-              const { text, isNA } = formatValue(raw as number | string, def.unit);
+              const { text, isNA } = fmtVal(raw as number | string, def.unit, def.showPlus);
               const num = typeof raw === 'number' ? raw : null;
               const isGood = num !== null && def.good ? def.good(num) : null;
 
               return (
-                <div key={def.key} className="metric-row" title={def.tooltip}>
-                  <span className="metric-label flex items-center gap-1">
+                <div key={def.key} className="metric-row group" title={def.tooltip}>
+                  <span className="metric-label flex items-center gap-1 group-hover:text-slate-200 transition-colors">
                     {def.label}
-                    <Info size={8} className="text-slate-300" />
+                    <Info size={8} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className={`metric-value ${
-                      isNA ? 'text-slate-400' :
-                      isGood === true ? 'text-emerald-700' :
-                      isGood === false ? 'text-amber-600' :
-                      'text-slate-800'
-                    }`}>
+                    <span className={`text-xs font-bold font-mono transition-colors
+                      ${isNA ? 'text-slate-400' :
+                        isGood === true ? 'text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]' :
+                        isGood === false ? 'text-amber-400' :
+                        'text-white'}`}>
                       {text}
                     </span>
                     {!isNA && (
-                      <span className={`text-2xs px-1 py-0.5 rounded-sm border font-mono ${SOURCE_COLORS[def.source]}`}>
+                      <span className={`tag text-[8px] border ${SOURCE_STYLE[def.source]}`}>
                         {def.source}
                       </span>
                     )}
@@ -169,15 +120,16 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ metrics, isLoading }
               );
             })}
 
-            {/* Extra signal-level metrics */}
-            <div className="pt-1 mt-1 border-t border-slate-100">
-              <div className="panel-title mb-1">Signal Levels</div>
-              {EXTRA_METRICS.map(def => {
-                const { text } = formatValue(metrics[def.key] as number, def.unit);
+            {/* Signal levels */}
+            <div className="mt-3 pt-3 border-t border-slate-800">
+              <div className="panel-title mb-2 text-slate-400">Signal Power & Peaks</div>
+              {(['rms_input', 'rms_output', 'peak_input', 'peak_output'] as (keyof Metrics)[]).map(key => {
+                const { text } = fmtVal(metrics[key] as number);
+                const label = key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
                 return (
-                  <div key={def.key} className="metric-row" title={def.tooltip}>
-                    <span className="metric-label">{def.label}</span>
-                    <span className="metric-value text-slate-600">{text}</span>
+                  <div key={key} className="metric-row">
+                    <span className="metric-label">{label}</span>
+                    <span className="text-[11px] font-mono text-slate-300 font-bold">{text}</span>
                   </div>
                 );
               })}

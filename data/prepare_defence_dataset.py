@@ -1,8 +1,8 @@
 from pathlib import Path
 import random
-import wave
 import numpy as np
 import soundfile as sf
+import librosa
 
 # ============================================================
 # Defence Speech Enhancement Dataset Generator
@@ -12,9 +12,11 @@ ROOT = Path(__file__).resolve().parent.parent
 
 SPEECH_DIR = ROOT / "dataset" / "env_nosie_speech"
 ENV_NOISE_DIR = ROOT / "dataset" / "env_noise"
-MILITARY_NOISE_DIR = ROOT / "data" / "raw" / "defence_noise_train"
+MILITARY_NOISE_DIR = ROOT / "dataset" / "military_noise"
+MILITARY_NOISE_TITLE_DIR = ROOT / "dataset" / "military_noise_by_title"
+DEFENCE_NOISE_TRAIN_DIR = ROOT / "data" / "raw" / "defence_noise_train"
 
-OUTPUT_DIR = ROOT / "data" / "processed" / "defence_custom"
+OUTPUT_DIR = ROOT / "data" / "processed" / "synthetic"
 
 SAMPLE_RATE = 16000
 CHUNK_SECONDS = 3.0
@@ -38,11 +40,9 @@ def load_audio(path):
         audio = np.mean(audio, axis=1)
 
     if sr != SAMPLE_RATE:
-        raise ValueError(
-            f"{path.name}: expected {SAMPLE_RATE} Hz, found {sr} Hz"
-        )
+        audio = librosa.resample(audio, orig_sr=sr, target_sr=SAMPLE_RATE)
 
-    return audio
+    return audio.astype(np.float32)
 
 
 def rms(audio):
@@ -64,7 +64,7 @@ def mix_at_snr(clean, noise, snr_db):
     noise_rms = rms(noise)
 
     if noise_rms < 1e-8:
-        return clean.copy()
+        return clean.copy(), clean.copy()
 
     target_noise_rms = clean_rms / (10 ** (snr_db / 20.0))
     noise = noise * (target_noise_rms / noise_rms)
@@ -81,29 +81,52 @@ def mix_at_snr(clean, noise, snr_db):
     return noisy.astype(np.float32), clean.astype(np.float32)
 
 
-def collect_wavs(directory):
-    return sorted(directory.rglob("*.wav"))
+import os
+
+def collect_audio(directory):
+    if not directory.exists():
+        return []
+    valid_exts = {".wav", ".mp3", ".flac", ".ogg", ".aiff", ".aif"}
+    audio_files = []
+    for root_dir, _, files in os.walk(directory):
+        for f in files:
+            ext = os.path.splitext(f)[1].lower()
+            if ext in valid_exts:
+                audio_files.append(Path(root_dir) / f)
+    return sorted(audio_files)
+
 
 
 def main():
-    clean_files = collect_wavs(SPEECH_DIR)
-    env_noise_files = collect_wavs(ENV_NOISE_DIR)
-    military_noise_files = collect_wavs(MILITARY_NOISE_DIR)
+    clean_files = collect_audio(SPEECH_DIR)
+    
+    # Check if extra clean speech exists in data/raw/clean_trainset_28spk_wav
+    extra_clean_dir = ROOT / "data" / "raw" / "clean_trainset_28spk_wav"
+    if extra_clean_dir.exists():
+        extra_clean = collect_audio(extra_clean_dir)
+        clean_files.extend(extra_clean)
 
-    print(f"Clean speech files     : {len(clean_files)}")
-    print(f"Environment noise files: {len(env_noise_files)}")
-    print(f"Military noise files   : {len(military_noise_files)}")
+    env_noise_files = collect_audio(ENV_NOISE_DIR)
+    military_noise_files = collect_audio(MILITARY_NOISE_DIR)
+    military_noise_title_files = collect_audio(MILITARY_NOISE_TITLE_DIR)
+    defence_train_files = collect_audio(DEFENCE_NOISE_TRAIN_DIR)
+
+    print(f"Clean speech files           : {len(clean_files)}")
+    print(f"Environment noise files      : {len(env_noise_files)}")
+    print(f"Military noise files         : {len(military_noise_files)}")
+    print(f"Military noise by title files: {len(military_noise_title_files)}")
+    print(f"Defence raw train noise files: {len(defence_train_files)}")
 
     if not clean_files:
         raise RuntimeError("No clean speech files found.")
 
-    if not env_noise_files:
-        raise RuntimeError("No environment noise files found.")
+    all_noise_files = env_noise_files + military_noise_files + military_noise_title_files + defence_train_files
+    
+    # Fall back to env_noise if other noise directories are empty
+    if not all_noise_files:
+        raise RuntimeError("No noise files found across specified noise directories.")
 
-    if not military_noise_files:
-        raise RuntimeError("No military noise files found.")
-
-    all_noise_files = env_noise_files + military_noise_files
+    print(f"Total noise files collected  : {len(all_noise_files)}")
 
     clean_out = OUTPUT_DIR / "clean"
     noisy_out = OUTPUT_DIR / "noisy"
@@ -113,23 +136,32 @@ def main():
 
     total = len(clean_files) * MIXES_PER_SPEECH
 
-    print(f"Mixtures to generate   : {total}")
-    print(f"SNR levels              : {SNRS}")
+    print(f"Mixtures to generate         : {total}")
+    print(f"SNR levels                   : {SNRS}")
     print()
 
     counter = 0
 
     for speech_index, speech_path in enumerate(clean_files):
 
-        speech = load_audio(speech_path)
+        try:
+            speech = load_audio(speech_path)
+        except Exception as e:
+            print(f"Skipping corrupt speech file {speech_path.name}: {e}")
+            continue
 
-        # Break long speech into random 3-second chunks
+        # Generate mixtures from speech chunks
         for mix_index in range(MIXES_PER_SPEECH):
 
             clean_chunk = make_length(speech, CHUNK_SAMPLES)
 
             noise_path = random.choice(all_noise_files)
-            noise = load_audio(noise_path)
+            try:
+                noise = load_audio(noise_path)
+            except Exception as e:
+                # If a noise file fails to load, pick another one
+                continue
+
             noise_chunk = make_length(noise, CHUNK_SAMPLES)
 
             snr_db = random.choice(SNRS)
@@ -141,7 +173,7 @@ def main():
             )
 
             filename = (
-                f"speech{speech_index:02d}_"
+                f"speech{speech_index:04d}_"
                 f"mix{mix_index:03d}_"
                 f"snr{snr_db:+d}.wav"
             )
@@ -162,10 +194,11 @@ def main():
 
             counter += 1
 
-        print(
-            f"[{speech_index + 1}/{len(clean_files)}] "
-            f"{speech_path.name}"
-        )
+        if (speech_index + 1) % 5 == 0 or (speech_index + 1) == len(clean_files):
+            print(
+                f"[{speech_index + 1}/{len(clean_files)}] "
+                f"Processed {speech_path.name} (Generated {counter} mixtures so far)"
+            )
 
     print()
     print("Dataset generation complete.")
@@ -175,4 +208,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  defence-ai-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: defence-speech-intelligence
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

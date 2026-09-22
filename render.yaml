@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: defence-speech-intelligence
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000

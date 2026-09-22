@@ -1,11 +1,10 @@
 /* ============================================================
-   components/ControlPanel.tsx
-   Left vertical engineering control panel
+   components/ControlPanel.tsx — Futuristic Defence Sidebar Controls
    ============================================================ */
 import React, { useRef } from 'react';
 import {
   Upload, Mic, Play, RotateCcw, Download, Settings,
-  AlertTriangle
+  AlertTriangle, ChevronDown
 } from 'lucide-react';
 import type { ProcessingConfig, NoiseProfile, SystemStatus } from '../types';
 
@@ -22,29 +21,31 @@ interface ControlPanelProps {
   warnings: string[];
 }
 
-const NOISE_PROFILES: { value: NoiseProfile; label: string }[] = [
-  { value: 'helicopter', label: 'Helicopter / Rotor' },
-  { value: 'engine',     label: 'Engine / Vehicle' },
-  { value: 'gunfire',    label: 'Gunfire / Blast' },
-  { value: 'wind',       label: 'Wind / Gust' },
-  { value: 'environmental', label: 'Environmental' },
-  { value: 'custom',     label: 'Custom' },
+const NOISE_PROFILES: { value: NoiseProfile; label: string; icon: string }[] = [
+  { value: 'helicopter', label: 'Helicopter / Rotor', icon: '🚁' },
+  { value: 'engine',     label: 'Engine / Vehicle',   icon: '🚜' },
+  { value: 'gunfire',    label: 'Gunfire / Blast',    icon: '💥' },
+  { value: 'wind',       label: 'Wind / Gust',         icon: '🌬️' },
+  { value: 'environmental', label: 'Environmental',   icon: '🌿' },
+  { value: 'custom',     label: 'Custom',              icon: '⚙️' },
 ];
 
 const CHUNK_OPTIONS = [0.5, 1.0, 1.5, 2.0, 3.0];
 
-const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="px-2.5 pt-3 pb-1">
-    <div className="field-label text-slate-400">{children}</div>
-  </div>
+const Divider: React.FC = () => (
+  <div className="mx-4 my-2.5 h-px bg-slate-800/80" />
 );
 
-const Row: React.FC<{ label: string; children: React.ReactNode; tooltip?: string }> = ({
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="px-4 pt-3 pb-1.5 panel-title text-cyan-400">{children}</div>
+);
+
+const FieldRow: React.FC<{ label: string; children: React.ReactNode; tooltip?: string }> = ({
   label, children, tooltip,
 }) => (
-  <div className="px-2.5 py-1">
+  <div className="px-4 pb-2">
     <label className="field-label" title={tooltip}>{label}</label>
-    <div className="mt-0.5">{children}</div>
+    {children}
   </div>
 );
 
@@ -53,37 +54,42 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onStartRecording, selectedFile, status, warnings,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isRunning = status === 'PROCESSING' || status === 'ANALYZING' || status === 'UPLOADING';
+  const isRunning = ['PROCESSING', 'ANALYZING', 'UPLOADING'].includes(status);
   const canRun = selectedFile !== null && !isRunning;
 
   return (
-    <aside className="panel flex flex-col overflow-y-auto" style={{ minHeight: 0 }}>
+    <aside className="hud-panel flex flex-col overflow-hidden border border-cyan-500/20 bg-[#070e1c]/95" style={{ minHeight: 0 }}>
       {/* Header */}
-      <div className="panel-header">
-        <span className="panel-title flex items-center gap-1.5">
-          <Settings size={10} />
-          Processing Controls
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950/70">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-cyan-950 border border-cyan-500/40 text-cyan-400 shadow-[0_0_8px_rgba(0,240,255,0.2)]">
+            <Settings size={13} />
+          </div>
+          <span className="text-xs font-bold text-white tracking-wide font-mono uppercase">Processing Controls</span>
+        </div>
+        <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/30">
+          ONNX DSP
         </span>
       </div>
 
       <div className="flex flex-col flex-1 overflow-y-auto">
         {/* ── Input Source ─────────────────────────────────── */}
         <SectionLabel>Input Source</SectionLabel>
-        <div className="px-2.5 flex gap-2">
+        <div className="px-4 grid grid-cols-2 gap-2">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="btn-secondary flex-1 text-2xs"
+            className="btn-secondary flex-col gap-1 py-3 h-auto"
           >
-            <Upload size={11} />
-            Upload Audio
+            <Upload size={15} className="text-cyan-400" />
+            <span className="text-[10px]">Upload WAV</span>
           </button>
           <button
             onClick={onStartRecording}
             disabled={status === 'RECORDING'}
-            className={`btn-secondary flex-1 text-2xs ${status === 'RECORDING' ? 'border-red-400 text-red-600' : ''}`}
+            className={`btn-secondary flex-col gap-1 py-3 h-auto ${status === 'RECORDING' ? 'border-red-400/40 text-red-400' : ''}`}
           >
-            <Mic size={11} className={status === 'RECORDING' ? 'blink' : ''} />
-            {status === 'RECORDING' ? 'Recording…' : 'Record Mic'}
+            <Mic size={15} className={`${status === 'RECORDING' ? 'text-red-400 animate-pulse' : 'text-cyan-400'}`} />
+            <span className="text-[10px]">{status === 'RECORDING' ? 'Recording…' : 'Record Mic'}</span>
           </button>
         </div>
         <input
@@ -91,136 +97,144 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           type="file"
           accept=".wav,.flac,.mp3"
           className="hidden"
-          onChange={e => {
-            const f = e.target.files?.[0];
-            if (f) onFileSelect(f);
-            e.target.value = '';
-          }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) onFileSelect(f); e.target.value = ''; }}
         />
 
         {/* File name */}
-        <div className="px-2.5 mt-1.5">
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-panel-border rounded-sm min-h-[26px]">
-            <span className="text-2xs text-slate-400 font-mono truncate">
-              {selectedFile ? selectedFile.name : 'No file selected'}
-            </span>
+        <div className="px-4 mt-2">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-mono bg-slate-950/80 border border-slate-800 text-slate-300 truncate">
+            {selectedFile
+              ? <><span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" /><span className="truncate text-white font-bold">{selectedFile.name}</span></>
+              : <span className="text-slate-400">No file loaded</span>
+            }
           </div>
         </div>
 
         {/* Warnings */}
         {warnings.length > 0 && (
-          <div className="px-2.5 mt-1.5 space-y-1">
+          <div className="px-4 mt-2 space-y-1">
             {warnings.map((w, i) => (
-              <div key={i} className="flex items-start gap-1 px-2 py-1 bg-amber-50 border border-amber-200 rounded-sm">
-                <AlertTriangle size={10} className="text-amber-600 mt-0.5 shrink-0" />
-                <span className="text-2xs text-amber-700">{w}</span>
+              <div key={i} className="notice-warn">
+                <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
+                <span>{w}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* ── Processing Engine ─────────────────────────────── */}
-        <SectionLabel>Processing Engine</SectionLabel>
-        <Row label="Model">
-          <select className="field-select">
-            <option>DeepFilterNet3</option>
-          </select>
-        </Row>
+        <Divider />
 
-        <Row label="Inference Mode">
-          <select
-            className="field-select"
-            value={config.inferenceMode}
-            onChange={e => onConfigChange({ inferenceMode: e.target.value as 'ONNX' | 'PyTorch' })}
-          >
-            <option value="ONNX">ONNX (Edge / Pi)</option>
-            <option value="PyTorch">PyTorch (Dev)</option>
-          </select>
-        </Row>
+        {/* ── Engine ────────────────────────────────────────── */}
+        <SectionLabel>Inference Engine</SectionLabel>
+        <FieldRow label="Model Architecture">
+          <div className="relative">
+            <select className="field-select appearance-none cursor-not-allowed opacity-80" disabled>
+              <option>DeepFilterNet3 (Dual-Stage)</option>
+            </select>
+          </div>
+        </FieldRow>
+        <FieldRow label="Runtime Provider">
+          <div className="relative">
+            <select
+              className="field-select appearance-none"
+              value={config.inferenceMode}
+              onChange={e => onConfigChange({ inferenceMode: e.target.value as 'ONNX' | 'PyTorch' })}
+            >
+              <option value="ONNX">ONNX — Edge / Raspberry Pi</option>
+              <option value="PyTorch">PyTorch — Dev</option>
+            </select>
+            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+        </FieldRow>
+
+        <Divider />
 
         {/* ── Noise Profile ─────────────────────────────────── */}
-        <SectionLabel>Noise Profile</SectionLabel>
-        <Row label="Detected Noise Type" tooltip="Used for display and analysis — does not change the model">
-          <select
-            className="field-select"
-            value={config.noiseProfile}
-            onChange={e => onConfigChange({ noiseProfile: e.target.value as NoiseProfile })}
-          >
-            {NOISE_PROFILES.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
+        <SectionLabel>Noise Environment</SectionLabel>
+        <FieldRow label="Acoustic Preset">
+          <div className="relative">
+            <select
+              className="field-select appearance-none"
+              value={config.noiseProfile}
+              onChange={e => onConfigChange({ noiseProfile: e.target.value as NoiseProfile })}
+            >
+              {NOISE_PROFILES.map(p => (
+                <option key={p.value} value={p.value}>
+                  {p.icon} {p.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
+        </FieldRow>
+
+        <FieldRow label="Chunk Buffer (s)">
+          <div className="grid grid-cols-5 gap-1 font-mono">
+            {CHUNK_OPTIONS.map(c => (
+              <button
+                key={c}
+                onClick={() => onConfigChange({ chunkSeconds: c })}
+                className={`py-1 text-center rounded text-[10px] font-bold transition-all ${
+                  config.chunkSeconds === c
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-[0_0_8px_rgba(0,240,255,0.4)]'
+                    : 'bg-slate-950 border border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                {c}s
+              </button>
             ))}
-          </select>
-        </Row>
+          </div>
+        </FieldRow>
 
-        {/* ── Reference Mic ─────────────────────────────────── */}
-        <SectionLabel>Reference Microphone</SectionLabel>
-        <Row label="Input Configuration">
-          <select className="field-select">
-            <option>Primary Only</option>
-            <option>Primary + Reference</option>
-          </select>
-        </Row>
+        <Divider />
 
-        {/* ── NLMS ──────────────────────────────────────────── */}
-        <SectionLabel>NLMS Adaptive Filter</SectionLabel>
-        <div className="px-2.5">
-          <div className="flex items-center justify-between py-1 px-2 bg-slate-50 border border-panel-border rounded-sm">
-            <div>
-              <span className="text-2xs font-medium text-slate-700">NLMS</span>
-              <span className="ml-1 text-2xs text-slate-400">(adaptive filter)</span>
+        {/* ── DSP Options ────────────────────────────────────── */}
+        <SectionLabel>DSP Post-Processing</SectionLabel>
+        <div className="px-4 space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-slate-200 font-mono">NLMS Adaptive Filter</span>
+              <span className="text-[9px] text-slate-400">Armored cockpit feedback cancellation</span>
             </div>
             <button
               onClick={() => onConfigChange({ useNlms: !config.useNlms })}
-              className={`relative inline-flex h-4 w-7 items-center rounded-full border transition-colors
-                ${config.useNlms ? 'bg-defence-600 border-defence-700' : 'bg-slate-200 border-slate-300'}`}
-              title="NLMS is off by default — real dual-mic testing showed it can cancel real speech"
+              className={`toggle-track ${config.useNlms ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-700'}`}
             >
-              <span className={`inline-block h-3 w-3 rounded-full bg-white shadow transition-transform
-                ${config.useNlms ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+              <span className={`toggle-thumb ${config.useNlms ? 'translate-x-3.5 bg-slate-950' : 'translate-x-0.5 bg-slate-400'}`} />
             </button>
           </div>
-          {config.useNlms && (
-            <div className="mt-1 px-2 py-1 bg-amber-50 border border-amber-200 rounded-sm">
-              <span className="text-2xs text-amber-700">⚠ NLMS may attenuate real speech on genuine dual-mic captures</span>
-            </div>
-          )}
         </div>
 
-        {/* ── Chunk Size ────────────────────────────────────── */}
-        <SectionLabel>Chunk Size</SectionLabel>
-        <Row label="Processing Window" tooltip="Larger = better quality, higher latency">
-          <select
-            className="field-select"
-            value={config.chunkSeconds}
-            onChange={e => onConfigChange({ chunkSeconds: parseFloat(e.target.value) })}
-          >
-            {CHUNK_OPTIONS.map(v => (
-              <option key={v} value={v}>{v.toFixed(1)} s</option>
-            ))}
-          </select>
-        </Row>
-
-        {/* ── Spacer ────────────────────────────────────────── */}
         <div className="flex-1" />
 
-        {/* ── Action Buttons ────────────────────────────────── */}
-        <div className="px-2.5 py-3 space-y-2 border-t border-panel-border mt-3">
+        <Divider />
+
+        {/* ── Main Action Buttons ───────────────────────────── */}
+        <div className="p-4 space-y-2.5">
           <button
             onClick={onRun}
             disabled={!canRun}
-            className={`w-full btn-primary ${!canRun ? 'opacity-40 cursor-not-allowed' : ''}`}
+            className="btn-primary w-full py-2.5 text-xs"
           >
-            <Play size={12} className={isRunning ? 'animate-pulse' : ''} />
-            {isRunning ? 'PROCESSING…' : '▶  RUN SPEECH ENHANCEMENT'}
+            <Play size={15} className={isRunning ? 'animate-spin' : ''} />
+            <span>{isRunning ? 'PROCESSING…' : 'ENHANCE AUDIO'}</span>
           </button>
-          <div className="flex gap-2">
-            <button onClick={onReset} className="btn-secondary flex-1">
-              <RotateCcw size={11} />
-              Reset
+
+          <div className="grid grid-cols-2 gap-2 font-mono">
+            <button
+              onClick={onReset}
+              disabled={isRunning}
+              className="btn-secondary py-2"
+            >
+              <RotateCcw size={12} />
+              <span>Reset</span>
             </button>
-            <button onClick={onExport} className="btn-secondary flex-1" disabled={status !== 'COMPLETE'}>
-              <Download size={11} />
-              Export
+            <button
+              onClick={onExport}
+              className="btn-secondary py-2"
+            >
+              <Download size={12} className="text-cyan-400" />
+              <span>Export</span>
             </button>
           </div>
         </div>

@@ -35,8 +35,14 @@ venv/
 # checkpoint is explicitly un-ignored below since it is not re-downloadable -
 # it only exists because of real training done on this project.
 external/DTLN/
-external/DeepFilterNet3/
-external/DeepFilterNet/
-!external/DeepFilterNet3_finetuned/
-!external/DeepFilterNet3_finetuned/**
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+
+# Backend uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 

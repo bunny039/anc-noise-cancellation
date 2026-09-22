@@ -187,9 +187,10 @@ def mix_at_snr(clean, noise, snr_db):
     file numerically consistent with the speech actually embedded in the
     noisy file.
     """
-
-    signal_power = np.mean(clean.astype(np.float64) ** 2)
-    noise_power = np.mean(noise.astype(np.float64) ** 2)
+    clean_64 = clean.astype(np.float64)
+    noise_64 = noise.astype(np.float64)
+    signal_power = float(np.dot(clean_64, clean_64) / max(len(clean_64), 1))
+    noise_power = float(np.dot(noise_64, noise_64) / max(len(noise_64), 1))
 
     if noise_power < 1e-12:
         return (
